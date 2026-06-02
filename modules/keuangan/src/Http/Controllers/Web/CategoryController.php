@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace Modules\Keuangan\Http\Controllers\Web;
 
-use App\Http\Requests\CategoryRequest;
-use App\Models\Category;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Modules\Keuangan\Http\Requests\CategoryRequest;
+use Modules\Keuangan\Models\Category;
 
 class CategoryController extends Controller
 {
@@ -21,7 +22,7 @@ class CategoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('categories.index', compact('categories'));
+        return view(keuangan_view('web.categories.index'), compact('categories'));
     }
 
     /**
@@ -29,7 +30,7 @@ class CategoryController extends Controller
      */
     public function create(): View
     {
-        return view('categories.create');
+        return view(keuangan_view('web.categories.create'));
     }
 
     /**
@@ -51,7 +52,7 @@ class CategoryController extends Controller
     {
         $this->authorizeCategory($category);
 
-        return view('categories.edit', compact('category'));
+        return view(keuangan_view('web.categories.edit'), compact('category'));
     }
 
     /**

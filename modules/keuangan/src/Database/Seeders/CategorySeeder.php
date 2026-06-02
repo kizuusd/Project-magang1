@@ -1,11 +1,11 @@
 <?php
 
-namespace Database\Seeders;
+namespace Modules\Keuangan\Database\Seeders;
 
-use App\Models\Category;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Modules\Keuangan\Models\Category;
 
 class CategorySeeder extends Seeder
 {
