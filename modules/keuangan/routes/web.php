@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\Keuangan\Http\Controllers\Web\CategoryController;
 use Modules\Keuangan\Http\Controllers\Web\DashboardController;
+use Modules\Keuangan\Http\Controllers\Web\TransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,4 +21,5 @@ Route::middleware(['web', 'auth', 'verified'])->group(function () {
 
 Route::middleware(['web', 'auth'])->group(function () {
     Route::resource('categories', CategoryController::class)->except(['show']);
+    Route::resource('transactions', TransactionController::class)->except(['show', 'index']);
 });

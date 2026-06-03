@@ -18,6 +18,7 @@ class CategoryController extends Controller
     {
         $categories = $request->user()
             ->categories()
+            ->withCount('transactions')
             ->orderBy('type')
             ->orderBy('name')
             ->get();
