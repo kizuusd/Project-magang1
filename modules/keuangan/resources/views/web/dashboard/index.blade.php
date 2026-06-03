@@ -82,6 +82,35 @@
                 </div>
             </div>
 
+            {{-- Diagram Statistik 30 Hari --}}
+            <div class="bg-white border border-gray-200 overflow-hidden sm:rounded-lg mb-6">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900">Statistik Keuangan</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Pemasukan, pengeluaran, dan saldo harian — 30 hari terakhir</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-xs">
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-0.5 rounded bg-emerald-500 inline-block"></span>
+                                Pemasukan
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-0.5 rounded bg-rose-500 inline-block"></span>
+                                Pengeluaran
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="w-3 h-0.5 rounded bg-blue-500 inline-block"></span>
+                                Saldo
+                            </span>
+                        </div>
+                    </div>
+                    <div class="relative" style="height: 320px;">
+                        <canvas id="chartKeuangan"></canvas>
+                    </div>
+                </div>
+            </div>
+
             {{-- Filter --}}
             <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
                 <form method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-end gap-3">
@@ -216,4 +245,145 @@
 
         </div>
     </div>
+
+    {{-- Chart.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('chartKeuangan').getContext('2d');
+
+            const labels   = @json($chartLabels);
+            const income   = @json($chartIncome);
+            const expense  = @json($chartExpense);
+            const balance  = @json($chartBalance);
+
+            // Fungsi format Rupiah singkat (1.5jt, 500rb, dll)
+            function formatRupiahShort(value) {
+                if (Math.abs(value) >= 1000000) {
+                    return 'Rp ' + (value / 1000000).toFixed(1) + ' jt';
+                } else if (Math.abs(value) >= 1000) {
+                    return 'Rp ' + (value / 1000).toFixed(0) + ' rb';
+                }
+                return 'Rp ' + value.toLocaleString('id-ID');
+            }
+
+            function formatRupiahFull(value) {
+                return 'Rp ' + Number(value).toLocaleString('id-ID', { minimumFractionDigits: 0 });
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Pemasukan',
+                            data: income,
+                            borderColor: 'rgb(16, 185, 129)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(16, 185, 129)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                        },
+                        {
+                            label: 'Pengeluaran',
+                            data: expense,
+                            borderColor: 'rgb(244, 63, 94)',
+                            backgroundColor: 'rgba(244, 63, 94, 0.08)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: 'rgb(244, 63, 94)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                        },
+                        {
+                            label: 'Saldo',
+                            data: balance,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.06)',
+                            borderWidth: 2.5,
+                            tension: 0.3,
+                            fill: true,
+                            pointRadius: 2,
+                            pointHoverRadius: 5,
+                            pointBackgroundColor: 'rgb(59, 130, 246)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                            titleColor: '#f3f4f6',
+                            bodyColor: '#f3f4f6',
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: { size: 13, weight: '600' },
+                            bodyFont: { size: 12 },
+                            displayColors: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            boxPadding: 4,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': ' + formatRupiahFull(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                            },
+                            ticks: {
+                                font: { size: 11 },
+                                color: '#9ca3af',
+                                maxTicksLimit: 10,
+                            },
+                            border: {
+                                display: false,
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(229, 231, 235, 0.5)',
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                font: { size: 11 },
+                                color: '#9ca3af',
+                                callback: function(value) {
+                                    return formatRupiahShort(value);
+                                },
+                                maxTicksLimit: 6,
+                            },
+                            border: {
+                                display: false,
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </x-app-layout>

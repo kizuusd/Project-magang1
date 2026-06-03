@@ -3,6 +3,8 @@
 namespace Modules\Keuangan\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -42,12 +44,74 @@ class DashboardController extends Controller
         $totalExpense = $request->user()->transactions()->where('type', 'expense')->sum('amount');
         $balance      = $totalIncome - $totalExpense;
 
+        // ============================================
+        // Data Chart: 30 hari terakhir
+        // ============================================
+        $startDate = Carbon::today()->subDays(29);
+        $endDate   = Carbon::today();
+        $period    = CarbonPeriod::create($startDate, $endDate);
+
+        // Ambil sum harian pemasukan
+        $dailyIncome = $request->user()
+            ->transactions()
+            ->where('type', 'income')
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->selectRaw('DATE(transaction_date) as date, SUM(amount) as total')
+            ->groupBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        // Ambil sum harian pengeluaran
+        $dailyExpense = $request->user()
+            ->transactions()
+            ->where('type', 'expense')
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->selectRaw('DATE(transaction_date) as date, SUM(amount) as total')
+            ->groupBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        // Susun data per hari dengan running balance
+        $chartLabels    = [];
+        $chartIncome    = [];
+        $chartExpense   = [];
+        $chartBalance   = [];
+        $runningBalance = 0;
+
+        // Hitung saldo sebelum 30 hari terakhir sebagai starting balance
+        $priorIncome  = $request->user()->transactions()
+            ->where('type', 'income')
+            ->where('transaction_date', '<', $startDate)
+            ->sum('amount');
+        $priorExpense = $request->user()->transactions()
+            ->where('type', 'expense')
+            ->where('transaction_date', '<', $startDate)
+            ->sum('amount');
+        $runningBalance = $priorIncome - $priorExpense;
+
+        foreach ($period as $date) {
+            $dateStr = $date->format('Y-m-d');
+            $dayIncome  = (float) ($dailyIncome[$dateStr] ?? 0);
+            $dayExpense = (float) ($dailyExpense[$dateStr] ?? 0);
+
+            $runningBalance += $dayIncome - $dayExpense;
+
+            $chartLabels[]  = $date->translatedFormat('d M');
+            $chartIncome[]  = $dayIncome;
+            $chartExpense[] = $dayExpense;
+            $chartBalance[] = $runningBalance;
+        }
+
         return view(keuangan_view('web.dashboard.index'), compact(
             'transactions',
             'categories',
             'totalIncome',
             'totalExpense',
-            'balance'
+            'balance',
+            'chartLabels',
+            'chartIncome',
+            'chartExpense',
+            'chartBalance'
         ));
     }
 }
