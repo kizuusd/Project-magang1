@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Modules\Keuangan\Models\Category;
+use Modules\Keuangan\Models\SavingGoal;
 use Modules\Keuangan\Models\Transaction;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -47,6 +48,14 @@ class User extends Authenticatable
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    /**
+     * Get the saving goals for the user.
+     */
+    public function savingGoals(): HasMany
+    {
+        return $this->hasMany(SavingGoal::class);
     }
 }
 

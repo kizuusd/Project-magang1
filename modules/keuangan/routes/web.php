@@ -17,6 +17,8 @@ use Modules\Keuangan\Http\Controllers\Web\TransactionController;
 
 Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/dashboard/saving-goal', [DashboardController::class, 'storeSavingGoal'])->name('saving-goal.store');
+    Route::delete('/dashboard/saving-goal', [DashboardController::class, 'deleteSavingGoal'])->name('saving-goal.destroy');
 });
 
 Route::middleware(['web', 'auth'])->group(function () {

@@ -82,6 +82,332 @@
                 </div>
             </div>
 
+            {{-- ============================================ --}}
+            {{-- TARGET TABUNGAN --}}
+            {{-- ============================================ --}}
+            @php
+                $goalProgress    = 0;
+                $goalRemaining   = 0;
+                $goalDaysLeft    = 0;
+                $goalDaysTotal   = 0;
+                $goalIsAchieved  = false;
+                $goalIsExpired   = false;
+
+                if ($savingGoal) {
+                    $goalProgress   = $savingGoal->target_amount > 0
+                        ? min(100, round(($balance / $savingGoal->target_amount) * 100, 1))
+                        : 0;
+                    $goalRemaining  = max(0, $savingGoal->target_amount - $balance);
+                    $goalDaysLeft   = max(0, now()->startOfDay()->diffInDays($savingGoal->end_date->startOfDay(), false));
+                    $goalDaysTotal  = max(1, $savingGoal->start_date->startOfDay()->diffInDays($savingGoal->end_date->startOfDay()));
+                    $goalIsAchieved = $balance >= $savingGoal->target_amount;
+                    $goalIsExpired  = now()->startOfDay()->gt($savingGoal->end_date->startOfDay()) && !$goalIsAchieved;
+                }
+            @endphp
+
+            <div class="mb-6">
+                @if (!$savingGoal)
+                    {{-- ---- BELUM ADA GOAL: Tampilkan form set target ---- --}}
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div class="px-6 pt-5 pb-4 border-b border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-shrink-0 bg-amber-100 rounded-lg p-2.5">
+                                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900">Target Tabungan</h3>
+                                    <p class="text-xs text-gray-500 mt-0.5">Tetapkan target untuk memotivasi diri menabung</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <form id="form-set-goal" action="{{ route('saving-goal.store') }}" method="POST">
+                                @csrf
+                                @if ($errors->any())
+                                    <div class="mb-4 rounded-lg bg-rose-50 border border-rose-200 p-3">
+                                        <ul class="text-xs text-rose-700 space-y-1 list-disc list-inside">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div>
+                                        <label for="goal-name" class="block text-xs font-medium text-gray-600 mb-1">Nama Target</label>
+                                        <input type="text" id="goal-name" name="name"
+                                               value="{{ old('name', 'Target Tabungan') }}"
+                                               placeholder="Contoh: Beli Laptop"
+                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                    </div>
+                                    <div>
+                                        <label for="goal-amount" class="block text-xs font-medium text-gray-600 mb-1">Nominal Target (Rp)</label>
+                                        <input type="number" id="goal-amount" name="target_amount"
+                                               value="{{ old('target_amount') }}"
+                                               placeholder="Contoh: 5000000"
+                                               min="1" step="1"
+                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                    </div>
+                                    <div>
+                                        <label for="goal-start" class="block text-xs font-medium text-gray-600 mb-1">Tanggal Mulai</label>
+                                        <input type="date" id="goal-start" name="start_date"
+                                               value="{{ old('start_date', date('Y-m-d')) }}"
+                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                    </div>
+                                    <div>
+                                        <label for="goal-end" class="block text-xs font-medium text-gray-600 mb-1">Tanggal Akhir</label>
+                                        <input type="date" id="goal-end" name="end_date"
+                                               value="{{ old('end_date') }}"
+                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button type="submit" id="btn-set-goal"
+                                            class="inline-flex items-center px-5 py-2 bg-amber-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition duration-150">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        Simpan Target
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                @else
+                    {{-- ---- SUDAH ADA GOAL: Tampilkan progress ---- --}}
+                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                        <div class="px-6 pt-5 pb-4 border-b border-gray-100">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-shrink-0 rounded-lg p-2.5
+                                        {{ $goalIsAchieved ? 'bg-emerald-100' : ($goalIsExpired ? 'bg-rose-100' : 'bg-amber-100') }}">
+                                        @if ($goalIsAchieved)
+                                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        @elseif ($goalIsExpired)
+                                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                        @else
+                                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-semibold text-gray-900">{{ $savingGoal->name }}</h3>
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            {{ $savingGoal->start_date->translatedFormat('d M Y') }}
+                                            &rarr;
+                                            {{ $savingGoal->end_date->translatedFormat('d M Y') }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    {{-- Tombol Edit --}}
+                                    <button type="button" id="btn-open-edit-goal"
+                                            onclick="document.getElementById('modal-edit-goal').classList.remove('hidden')"
+                                            class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition duration-150">
+                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Edit
+                                    </button>
+                                    {{-- Tombol Hapus --}}
+                                    <form id="form-delete-goal" action="{{ route('saving-goal.destroy') }}" method="POST"
+                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus target tabungan ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" id="btn-delete-goal"
+                                                class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 transition duration-150">
+                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            {{-- Status badge --}}
+                            @if ($goalIsAchieved)
+                                <div class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-semibold text-emerald-700">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    🎉 Selamat! Target tercapai!
+                                </div>
+                            @elseif ($goalIsExpired)
+                                <div class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-200 rounded-full text-xs font-semibold text-rose-700">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Waktu habis — target belum tercapai
+                                </div>
+                            @else
+                                <div class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-semibold text-amber-700">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    {{ $goalDaysLeft }} hari tersisa
+                                </div>
+                            @endif
+
+                            {{-- Progress bar --}}
+                            <div class="mb-4">
+                                <div class="flex justify-between items-end mb-1.5">
+                                    <span class="text-xs text-gray-500">Progress</span>
+                                    <span class="text-sm font-bold
+                                        {{ $goalIsAchieved ? 'text-emerald-600' : ($goalIsExpired ? 'text-rose-500' : 'text-amber-600') }}">
+                                        {{ $goalProgress }}%
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                                    <div id="saving-progress-bar"
+                                         class="h-3 rounded-full transition-all duration-700 ease-out
+                                            {{ $goalIsAchieved ? 'bg-emerald-500' : ($goalIsExpired ? 'bg-rose-400' : 'bg-amber-400') }}"
+                                         style="width: 0%"
+                                         data-target="{{ $goalProgress }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Stats grid --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                                <div class="bg-gray-50 rounded-lg p-3.5">
+                                    <p class="text-xs text-gray-500 mb-0.5">Target Nominal</p>
+                                    <p class="text-sm font-bold text-gray-800">{{ format_rupiah($savingGoal->target_amount) }}</p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3.5">
+                                    <p class="text-xs text-gray-500 mb-0.5">Saldo Terkini</p>
+                                    <p class="text-sm font-bold {{ $balance >= 0 ? 'text-blue-600' : 'text-orange-600' }}">
+                                        {{ format_rupiah($balance) }}
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3.5">
+                                    <p class="text-xs text-gray-500 mb-0.5">
+                                        {{ $goalIsAchieved ? 'Kelebihan Dana' : 'Masih Kurang' }}
+                                    </p>
+                                    <p class="text-sm font-bold {{ $goalIsAchieved ? 'text-emerald-600' : 'text-rose-500' }}">
+                                        @if ($goalIsAchieved)
+                                            {{ format_rupiah($balance - $savingGoal->target_amount) }}
+                                        @else
+                                            {{ format_rupiah($goalRemaining) }}
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ============================================ --}}
+                    {{-- MODAL EDIT GOAL --}}
+                    {{-- ============================================ --}}
+                    <div id="modal-edit-goal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-edit-goal-title" role="dialog" aria-modal="true">
+                        {{-- Backdrop --}}
+                        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
+                             onclick="document.getElementById('modal-edit-goal').classList.add('hidden')"></div>
+
+                        {{-- Modal panel --}}
+                        <div class="relative flex min-h-full items-center justify-center p-4">
+                            <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+                                {{-- Modal header --}}
+                                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="bg-amber-100 rounded-lg p-2">
+                                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                        </div>
+                                        <h3 id="modal-edit-goal-title" class="text-base font-semibold text-gray-900">Edit Target Tabungan</h3>
+                                    </div>
+                                    <button type="button"
+                                            onclick="document.getElementById('modal-edit-goal').classList.add('hidden')"
+                                            class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg p-1.5 transition duration-150">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {{-- Modal body --}}
+                                <form id="form-edit-goal" action="{{ route('saving-goal.store') }}" method="POST" class="p-6">
+                                    @csrf
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label for="edit-goal-name" class="block text-xs font-medium text-gray-700 mb-1.5">
+                                                Nama Target <span class="text-rose-500">*</span>
+                                            </label>
+                                            <input type="text" id="edit-goal-name" name="name"
+                                                   value="{{ $savingGoal->name }}"
+                                                   placeholder="Contoh: Beli Laptop"
+                                                   class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                        </div>
+
+                                        <div>
+                                            <label for="edit-goal-amount" class="block text-xs font-medium text-gray-700 mb-1.5">
+                                                Nominal Target (Rp) <span class="text-rose-500">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <span class="absolute inset-y-0 left-3 flex items-center text-sm text-gray-500 pointer-events-none">Rp</span>
+                                                <input type="number" id="edit-goal-amount" name="target_amount"
+                                                       value="{{ (int) $savingGoal->target_amount }}"
+                                                       min="1" step="1"
+                                                       class="w-full pl-9 rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="edit-goal-start" class="block text-xs font-medium text-gray-700 mb-1.5">
+                                                    Tanggal Mulai <span class="text-rose-500">*</span>
+                                                </label>
+                                                <input type="date" id="edit-goal-start" name="start_date"
+                                                       value="{{ $savingGoal->start_date->format('Y-m-d') }}"
+                                                       class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                            </div>
+                                            <div>
+                                                <label for="edit-goal-end" class="block text-xs font-medium text-gray-700 mb-1.5">
+                                                    Tanggal Akhir <span class="text-rose-500">*</span>
+                                                </label>
+                                                <input type="date" id="edit-goal-end" name="end_date"
+                                                       value="{{ $savingGoal->end_date->format('Y-m-d') }}"
+                                                       class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Modal footer --}}
+                                    <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                                        <button type="button"
+                                                onclick="document.getElementById('modal-edit-goal').classList.add('hidden')"
+                                                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition duration-150">
+                                            Batal
+                                        </button>
+                                        <button type="submit" id="btn-save-edit-goal"
+                                                class="inline-flex items-center px-5 py-2 bg-amber-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition duration-150">
+                                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            Simpan Perubahan
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            {{-- ============================================ --}}
+            {{-- END TARGET TABUNGAN --}}
+            {{-- ============================================ --}}
+
             {{-- Diagram Statistik 30 Hari --}}
             <div class="bg-white border border-gray-200 overflow-hidden sm:rounded-lg mb-6">
                 <div class="p-6">
@@ -250,6 +576,51 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // ============================================
+            // Animasi Progress Bar Target Tabungan
+            // ============================================
+            const progressBar = document.getElementById('saving-progress-bar');
+            if (progressBar) {
+                const targetWidth = parseFloat(progressBar.getAttribute('data-target')) || 0;
+                // Sedikit delay agar animasi terlihat
+                setTimeout(function () {
+                    progressBar.style.width = targetWidth + '%';
+                }, 150);
+            }
+
+            // ============================================
+            // Validasi tanggal pada form edit goal (modal)
+            // ============================================
+            const formEditGoal = document.getElementById('form-edit-goal');
+            if (formEditGoal) {
+                formEditGoal.addEventListener('submit', function (e) {
+                    const start = document.getElementById('edit-goal-start').value;
+                    const end   = document.getElementById('edit-goal-end').value;
+                    if (start && end && start > end) {
+                        e.preventDefault();
+                        alert('Tanggal akhir tidak boleh sebelum tanggal mulai.');
+                    }
+                });
+            }
+
+            // ============================================
+            // Validasi tanggal pada form set goal (inline)
+            // ============================================
+            const formSetGoal = document.getElementById('form-set-goal');
+            if (formSetGoal) {
+                formSetGoal.addEventListener('submit', function (e) {
+                    const start = document.getElementById('goal-start').value;
+                    const end   = document.getElementById('goal-end').value;
+                    if (start && end && start > end) {
+                        e.preventDefault();
+                        alert('Tanggal akhir tidak boleh sebelum tanggal mulai.');
+                    }
+                });
+            }
+
+            // ============================================
+            // Chart Keuangan
+            // ============================================
             const ctx = document.getElementById('chartKeuangan').getContext('2d');
 
             const labels   = @json($chartLabels);

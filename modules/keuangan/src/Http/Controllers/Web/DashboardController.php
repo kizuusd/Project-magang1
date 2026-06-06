@@ -5,8 +5,10 @@ namespace Modules\Keuangan\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Modules\Keuangan\Models\SavingGoal;
 
 class DashboardController extends Controller
 {
@@ -102,6 +104,11 @@ class DashboardController extends Controller
             $chartBalance[] = $runningBalance;
         }
 
+        // ============================================
+        // Target Tabungan (Saving Goal)
+        // ============================================
+        $savingGoal = $request->user()->savingGoals()->latest()->first();
+
         return view(keuangan_view('web.dashboard.index'), compact(
             'transactions',
             'categories',
@@ -111,7 +118,48 @@ class DashboardController extends Controller
             'chartLabels',
             'chartIncome',
             'chartExpense',
-            'chartBalance'
+            'chartBalance',
+            'savingGoal'
         ));
+    }
+
+    /**
+     * Store or update the user's saving goal.
+     */
+    public function storeSavingGoal(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'          => ['required', 'string', 'max:150'],
+            'target_amount' => ['required', 'numeric', 'min:1'],
+            'start_date'    => ['required', 'date'],
+            'end_date'      => ['required', 'date', 'after_or_equal:start_date'],
+        ], [
+            'name.required'          => 'Nama target wajib diisi.',
+            'target_amount.required' => 'Nominal target wajib diisi.',
+            'target_amount.min'      => 'Nominal target minimal Rp 1.',
+            'start_date.required'    => 'Tanggal mulai wajib diisi.',
+            'end_date.required'      => 'Tanggal akhir wajib diisi.',
+            'end_date.after_or_equal' => 'Tanggal akhir tidak boleh sebelum tanggal mulai.',
+        ]);
+
+        $existingGoal = $request->user()->savingGoals()->latest()->first();
+
+        if ($existingGoal) {
+            $existingGoal->update($validated);
+        } else {
+            $request->user()->savingGoals()->create($validated);
+        }
+
+        return redirect()->route('dashboard')->with('success', 'Target tabungan berhasil disimpan!');
+    }
+
+    /**
+     * Delete the user's saving goal.
+     */
+    public function deleteSavingGoal(Request $request): RedirectResponse
+    {
+        $request->user()->savingGoals()->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Target tabungan berhasil dihapus.');
     }
 }
