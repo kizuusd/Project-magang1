@@ -123,6 +123,156 @@ class DashboardController extends Controller
         ));
     }
 
+    public function indexV2(Request $request): View
+    {
+        // Transaksi terbaru (untuk "Your Transfers")
+        $transactions = $request->user()
+            ->transactions()
+            ->with('category')
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        $categories = $request->user()
+            ->categories()
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
+
+        $periodFilter = $request->query('period', 'bulan');
+
+        switch ($periodFilter) {
+            case 'hari':
+                $startDate = Carbon::today();
+                $endDate   = Carbon::today()->endOfDay();
+                $periodLabel = 'Hari Ini';
+                break;
+            case 'minggu':
+                $startDate = Carbon::today()->subDays(6)->startOfDay();
+                $endDate   = Carbon::today()->endOfDay();
+                $periodLabel = 'Minggu Ini';
+                break;
+            case 'tahun':
+                $startDate = Carbon::today()->startOfYear();
+                $endDate   = Carbon::today()->endOfYear();
+                $periodLabel = 'Tahun Ini';
+                break;
+            case 'bulan':
+            default:
+                $periodFilter = 'bulan';
+                $startDate = Carbon::today()->subDays(29)->startOfDay();
+                $endDate   = Carbon::today()->endOfDay();
+                $periodLabel = 'Bulan Ini';
+                break;
+        }
+
+        // Ringkasan saldo (Filtered by period)
+        $totalIncome  = $request->user()->transactions()->where('type', 'income')
+            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->sum('amount');
+        $totalExpense = $request->user()->transactions()->where('type', 'expense')
+            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->sum('amount');
+
+        // Saldo all-time
+        $allTimeIncome = $request->user()->transactions()->where('type', 'income')->sum('amount');
+        $allTimeExpense = $request->user()->transactions()->where('type', 'expense')->sum('amount');
+        $balance = $allTimeIncome - $allTimeExpense;
+
+        // Data chart
+        $transactionsForChart = $request->user()->transactions()
+            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get();
+
+        $chartLabels  = [];
+        $chartIncome  = [];
+        $chartExpense = [];
+        $chartBalance = [];
+
+        $priorIncome  = $request->user()->transactions()->where('type', 'income')->where('transaction_date', '<', $startDate->format('Y-m-d'))->sum('amount');
+        $priorExpense = $request->user()->transactions()->where('type', 'expense')->where('transaction_date', '<', $startDate->format('Y-m-d'))->sum('amount');
+        $runningBalance = $priorIncome - $priorExpense;
+
+        if ($periodFilter === 'hari') {
+            $startHour = Carbon::today()->startOfDay();
+            for ($i = 0; $i < 24; $i++) {
+                $currentHour = $startHour->copy()->addHours($i);
+                $nextHour = $currentHour->copy()->addHour();
+
+                $dayIncome = $transactionsForChart->filter(function($tx) use ($currentHour, $nextHour) {
+                    return $tx->type === 'income' && $tx->created_at >= $currentHour && $tx->created_at < $nextHour;
+                })->sum('amount');
+                
+                $dayExpense = $transactionsForChart->filter(function($tx) use ($currentHour, $nextHour) {
+                    return $tx->type === 'expense' && $tx->created_at >= $currentHour && $tx->created_at < $nextHour;
+                })->sum('amount');
+
+                $runningBalance += $dayIncome - $dayExpense;
+
+                $chartLabels[]  = $currentHour->format('H:i');
+                $chartIncome[]  = $dayIncome;
+                $chartExpense[] = $dayExpense;
+                $chartBalance[] = $runningBalance;
+            }
+        } elseif ($periodFilter === 'tahun') {
+            $period = CarbonPeriod::create($startDate, '1 month', $endDate);
+            foreach ($period as $date) {
+                $monthStr = $date->format('Y-m');
+                $dayIncome = $transactionsForChart->filter(function($tx) use ($monthStr) {
+                    return $tx->type === 'income' && $tx->transaction_date->format('Y-m') === $monthStr;
+                })->sum('amount');
+
+                $dayExpense = $transactionsForChart->filter(function($tx) use ($monthStr) {
+                    return $tx->type === 'expense' && $tx->transaction_date->format('Y-m') === $monthStr;
+                })->sum('amount');
+
+                $runningBalance += $dayIncome - $dayExpense;
+
+                $chartLabels[]  = $date->translatedFormat('M Y');
+                $chartIncome[]  = $dayIncome;
+                $chartExpense[] = $dayExpense;
+                $chartBalance[] = $runningBalance;
+            }
+        } else {
+            $period = CarbonPeriod::create($startDate, '1 day', $endDate);
+            foreach ($period as $date) {
+                $dateStr = $date->format('Y-m-d');
+                $dayIncome = $transactionsForChart->filter(function($tx) use ($dateStr) {
+                    return $tx->type === 'income' && $tx->transaction_date->format('Y-m-d') === $dateStr;
+                })->sum('amount');
+
+                $dayExpense = $transactionsForChart->filter(function($tx) use ($dateStr) {
+                    return $tx->type === 'expense' && $tx->transaction_date->format('Y-m-d') === $dateStr;
+                })->sum('amount');
+
+                $runningBalance += $dayIncome - $dayExpense;
+
+                $chartLabels[]  = $date->translatedFormat('d M');
+                $chartIncome[]  = $dayIncome;
+                $chartExpense[] = $dayExpense;
+                $chartBalance[] = $runningBalance;
+            }
+        }
+
+        $savingGoal = $request->user()->savingGoals()->latest()->first();
+
+        return view(keuangan_view('web.dashboard.dashboard-v2'), compact(
+            'transactions',
+            'categories',
+            'totalIncome',
+            'totalExpense',
+            'balance',
+            'chartLabels',
+            'chartIncome',
+            'chartExpense',
+            'chartBalance',
+            'savingGoal',
+            'periodFilter',
+            'periodLabel'
+        ));
+    }
+
     /**
      * Store or update the user's saving goal.
      */

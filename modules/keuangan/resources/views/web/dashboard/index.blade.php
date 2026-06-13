@@ -1,458 +1,107 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Dashboard') }}
-            </h2>
-            <div class="flex items-center space-x-2">
-                <a href="{{ route('transactions.create') }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-800 focus:bg-gray-800 active:bg-black focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Tambah Transaksi
-                </a>
+            <div class="flex items-center gap-3.5">
+                {{-- Sunburst logo --}}
+                <svg class="w-11 h-11 text-[#386650]" viewBox="0 0 44 44" fill="none">
+                    <circle cx="22" cy="22" r="4.5" fill="currentColor" opacity=".75"/>
+                    @foreach([0, 40, 80, 120, 160, 200, 240, 280, 320] as $deg)
+                        <line x1="22" y1="22"
+                              x2="{{ 22 + 10*cos(deg2rad($deg)) }}"
+                              y2="{{ 22 + 10*sin(deg2rad($deg)) }}"
+                              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".4"/>
+                    @endforeach
+                </svg>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 leading-tight">Hello, {{ Auth::user()->name ?? 'User' }}!</h1>
+                    <p class="text-sm text-gray-400">Explore information and activity about your property</p>
+                </div>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <style>
+        /* Sembunyikan top navigation bar bawaan layout app */
+        nav[x-data] { display: none !important; }
+        
+        /* Buat header menyatu dengan background halaman */
+        header.bg-white.shadow {
+            background-color: #F4F3F0 !important;
+            box-shadow: none !important;
+        }
 
-            {{-- Welcome Card --}}
-            <div class="bg-white border border-gray-200 overflow-hidden sm:rounded-lg mb-6">
-                <div class="p-6 text-gray-900">
-                    <h3 class="text-xl font-bold mb-1">Selamat Datang, {{ Auth::user()->name }}!</h3>
-                    <p class="text-gray-500 text-sm">Kelola keuangan pribadi Anda dengan mudah dan terorganisir.</p>
-                </div>
-            </div>
+        /* ─── Pagination Override ─── */
+        nav[aria-label="Pagination"] a,
+        nav[role="navigation"] a,
+        nav[aria-label="Pagination"] span:not([aria-current="page"]),
+        nav[role="navigation"] span:not([aria-current="page"]) {
+            background-color: #ffffff !important;
+            color: #386650 !important;
+            border-color: #d1d5db !important;
+        }
+        
+        nav[aria-label="Pagination"] span[aria-current="page"] > span,
+        nav[role="navigation"] span[aria-current="page"] > span {
+            background-color: #386650 !important;
+            border-color: #386650 !important;
+            color: #fff !important;
+        }
+        
+        nav[aria-label="Pagination"] a:hover,
+        nav[role="navigation"] a:hover {
+            background-color: #386650 !important;
+            border-color: #386650 !important;
+            color: #fff !important;
+        }
+        
+        /* Disabled prev/next text color */
+        nav[aria-label="Pagination"] span[aria-disabled] span,
+        nav[role="navigation"] span[aria-disabled] span,
+        nav[aria-label="Pagination"] span[aria-disabled],
+        nav[role="navigation"] span[aria-disabled] {
+            color: #9ca3af !important;
+            background-color: #ffffff !important;
+        }
+        
+        * { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #C8C5BE; border-radius: 99px; }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <div class="py-8" style="background-color: #F4F3F0; min-height: calc(100vh - 64px);">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Notifikasi --}}
             @if (session('success'))
-                <div class="mb-6 rounded-lg bg-emerald-50 border border-emerald-200 p-4">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <p class="text-sm font-medium text-emerald-800">{{ session('success') }}</p>
-                    </div>
+                <div class="mb-5 flex items-center gap-2 bg-[#386650]/10 border border-[#386650]/20 text-[#386650] text-sm font-medium px-4 py-2.5 rounded-xl">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {{ session('success') }}
                 </div>
             @endif
 
-            {{-- Ringkasan Saldo --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="bg-white border border-gray-200 rounded-lg p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-emerald-100 rounded-lg p-2.5">
-                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Pemasukan</p>
-                            <p class="text-xl font-bold text-emerald-600">{{ format_rupiah($totalIncome) }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white border border-gray-200 rounded-lg p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 bg-rose-100 rounded-lg p-2.5">
-                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Pengeluaran</p>
-                            <p class="text-xl font-bold text-rose-600">{{ format_rupiah($totalExpense) }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white border border-gray-200 rounded-lg p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 {{ $balance >= 0 ? 'bg-blue-100' : 'bg-orange-100' }} rounded-lg p-2.5">
-                            <svg class="w-5 h-5 {{ $balance >= 0 ? 'text-blue-600' : 'text-orange-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Saldo</p>
-                            <p class="text-xl font-bold {{ $balance >= 0 ? 'text-blue-600' : 'text-orange-600' }}">{{ format_rupiah($balance) }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- ============================================ --}}
-            {{-- TARGET TABUNGAN --}}
-            {{-- ============================================ --}}
-            @php
-                $goalProgress    = 0;
-                $goalRemaining   = 0;
-                $goalDaysLeft    = 0;
-                $goalDaysTotal   = 0;
-                $goalIsAchieved  = false;
-                $goalIsExpired   = false;
-
-                if ($savingGoal) {
-                    $goalProgress   = $savingGoal->target_amount > 0
-                        ? min(100, round(($balance / $savingGoal->target_amount) * 100, 1))
-                        : 0;
-                    $goalRemaining  = max(0, $savingGoal->target_amount - $balance);
-                    $goalDaysLeft   = max(0, now()->startOfDay()->diffInDays($savingGoal->end_date->startOfDay(), false));
-                    $goalDaysTotal  = max(1, $savingGoal->start_date->startOfDay()->diffInDays($savingGoal->end_date->startOfDay()));
-                    $goalIsAchieved = $balance >= $savingGoal->target_amount;
-                    $goalIsExpired  = now()->startOfDay()->gt($savingGoal->end_date->startOfDay()) && !$goalIsAchieved;
-                }
-            @endphp
-
-            <div class="mb-6">
-                @if (!$savingGoal)
-                    {{-- ---- BELUM ADA GOAL: Tampilkan form set target ---- --}}
-                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                        <div class="px-6 pt-5 pb-4 border-b border-gray-100">
-                            <div class="flex items-center gap-3">
-                                <div class="flex-shrink-0 bg-amber-100 rounded-lg p-2.5">
-                                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 class="text-base font-semibold text-gray-900">Target Tabungan</h3>
-                                    <p class="text-xs text-gray-500 mt-0.5">Tetapkan target untuk memotivasi diri menabung</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            <form id="form-set-goal" action="{{ route('saving-goal.store') }}" method="POST">
-                                @csrf
-                                @if ($errors->any())
-                                    <div class="mb-4 rounded-lg bg-rose-50 border border-rose-200 p-3">
-                                        <ul class="text-xs text-rose-700 space-y-1 list-disc list-inside">
-                                            @foreach ($errors->all() as $error)
-                                                <li>{{ $error }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                @endif
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div>
-                                        <label for="goal-name" class="block text-xs font-medium text-gray-600 mb-1">Nama Target</label>
-                                        <input type="text" id="goal-name" name="name"
-                                               value="{{ old('name', 'Target Tabungan') }}"
-                                               placeholder="Contoh: Beli Laptop"
-                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                    </div>
-                                    <div>
-                                        <label for="goal-amount" class="block text-xs font-medium text-gray-600 mb-1">Nominal Target (Rp)</label>
-                                        <input type="number" id="goal-amount" name="target_amount"
-                                               value="{{ old('target_amount') }}"
-                                               placeholder="Contoh: 5000000"
-                                               min="1" step="1"
-                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                    </div>
-                                    <div>
-                                        <label for="goal-start" class="block text-xs font-medium text-gray-600 mb-1">Tanggal Mulai</label>
-                                        <input type="date" id="goal-start" name="start_date"
-                                               value="{{ old('start_date', date('Y-m-d')) }}"
-                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                    </div>
-                                    <div>
-                                        <label for="goal-end" class="block text-xs font-medium text-gray-600 mb-1">Tanggal Akhir</label>
-                                        <input type="date" id="goal-end" name="end_date"
-                                               value="{{ old('end_date') }}"
-                                               class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                    </div>
-                                </div>
-                                <div class="mt-4 flex justify-end">
-                                    <button type="submit" id="btn-set-goal"
-                                            class="inline-flex items-center px-5 py-2 bg-amber-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition duration-150">
-                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                        Simpan Target
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                @else
-                    {{-- ---- SUDAH ADA GOAL: Tampilkan progress ---- --}}
-                    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                        <div class="px-6 pt-5 pb-4 border-b border-gray-100">
-                            <div class="flex items-center justify-between gap-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="flex-shrink-0 rounded-lg p-2.5
-                                        {{ $goalIsAchieved ? 'bg-emerald-100' : ($goalIsExpired ? 'bg-rose-100' : 'bg-amber-100') }}">
-                                        @if ($goalIsAchieved)
-                                            <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                        @elseif ($goalIsExpired)
-                                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                        @else
-                                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                            </svg>
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <h3 class="text-base font-semibold text-gray-900">{{ $savingGoal->name }}</h3>
-                                        <p class="text-xs text-gray-500 mt-0.5">
-                                            {{ $savingGoal->start_date->translatedFormat('d M Y') }}
-                                            &rarr;
-                                            {{ $savingGoal->end_date->translatedFormat('d M Y') }}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 flex-shrink-0">
-                                    {{-- Tombol Edit --}}
-                                    <button type="button" id="btn-open-edit-goal"
-                                            onclick="document.getElementById('modal-edit-goal').classList.remove('hidden')"
-                                            class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition duration-150">
-                                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                        </svg>
-                                        Edit
-                                    </button>
-                                    {{-- Tombol Hapus --}}
-                                    <form id="form-delete-goal" action="{{ route('saving-goal.destroy') }}" method="POST"
-                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus target tabungan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" id="btn-delete-goal"
-                                                class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-semibold text-gray-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300 transition duration-150">
-                                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                            Hapus
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="p-6">
-                            {{-- Status badge --}}
-                            @if ($goalIsAchieved)
-                                <div class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-semibold text-emerald-700">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    🎉 Selamat! Target tercapai!
-                                </div>
-                            @elseif ($goalIsExpired)
-                                <div class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-200 rounded-full text-xs font-semibold text-rose-700">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    Waktu habis — target belum tercapai
-                                </div>
-                            @else
-                                <div class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-semibold text-amber-700">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    {{ $goalDaysLeft }} hari tersisa
-                                </div>
-                            @endif
-
-                            {{-- Progress bar --}}
-                            <div class="mb-4">
-                                <div class="flex justify-between items-end mb-1.5">
-                                    <span class="text-xs text-gray-500">Progress</span>
-                                    <span class="text-sm font-bold
-                                        {{ $goalIsAchieved ? 'text-emerald-600' : ($goalIsExpired ? 'text-rose-500' : 'text-amber-600') }}">
-                                        {{ $goalProgress }}%
-                                    </span>
-                                </div>
-                                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                                    <div id="saving-progress-bar"
-                                         class="h-3 rounded-full transition-all duration-700 ease-out
-                                            {{ $goalIsAchieved ? 'bg-emerald-500' : ($goalIsExpired ? 'bg-rose-400' : 'bg-amber-400') }}"
-                                         style="width: 0%"
-                                         data-target="{{ $goalProgress }}">
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Stats grid --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                                <div class="bg-gray-50 rounded-lg p-3.5">
-                                    <p class="text-xs text-gray-500 mb-0.5">Target Nominal</p>
-                                    <p class="text-sm font-bold text-gray-800">{{ format_rupiah($savingGoal->target_amount) }}</p>
-                                </div>
-                                <div class="bg-gray-50 rounded-lg p-3.5">
-                                    <p class="text-xs text-gray-500 mb-0.5">Saldo Terkini</p>
-                                    <p class="text-sm font-bold {{ $balance >= 0 ? 'text-blue-600' : 'text-orange-600' }}">
-                                        {{ format_rupiah($balance) }}
-                                    </p>
-                                </div>
-                                <div class="bg-gray-50 rounded-lg p-3.5">
-                                    <p class="text-xs text-gray-500 mb-0.5">
-                                        {{ $goalIsAchieved ? 'Kelebihan Dana' : 'Masih Kurang' }}
-                                    </p>
-                                    <p class="text-sm font-bold {{ $goalIsAchieved ? 'text-emerald-600' : 'text-rose-500' }}">
-                                        @if ($goalIsAchieved)
-                                            {{ format_rupiah($balance - $savingGoal->target_amount) }}
-                                        @else
-                                            {{ format_rupiah($goalRemaining) }}
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- ============================================ --}}
-                    {{-- MODAL EDIT GOAL --}}
-                    {{-- ============================================ --}}
-                    <div id="modal-edit-goal" class="hidden fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-edit-goal-title" role="dialog" aria-modal="true">
-                        {{-- Backdrop --}}
-                        <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity"
-                             onclick="document.getElementById('modal-edit-goal').classList.add('hidden')"></div>
-
-                        {{-- Modal panel --}}
-                        <div class="relative flex min-h-full items-center justify-center p-4">
-                            <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
-                                {{-- Modal header --}}
-                                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="bg-amber-100 rounded-lg p-2">
-                                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </div>
-                                        <h3 id="modal-edit-goal-title" class="text-base font-semibold text-gray-900">Edit Target Tabungan</h3>
-                                    </div>
-                                    <button type="button"
-                                            onclick="document.getElementById('modal-edit-goal').classList.add('hidden')"
-                                            class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg p-1.5 transition duration-150">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                        </svg>
-                                    </button>
-                                </div>
-
-                                {{-- Modal body --}}
-                                <form id="form-edit-goal" action="{{ route('saving-goal.store') }}" method="POST" class="p-6">
-                                    @csrf
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label for="edit-goal-name" class="block text-xs font-medium text-gray-700 mb-1.5">
-                                                Nama Target <span class="text-rose-500">*</span>
-                                            </label>
-                                            <input type="text" id="edit-goal-name" name="name"
-                                                   value="{{ $savingGoal->name }}"
-                                                   placeholder="Contoh: Beli Laptop"
-                                                   class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                        </div>
-
-                                        <div>
-                                            <label for="edit-goal-amount" class="block text-xs font-medium text-gray-700 mb-1.5">
-                                                Nominal Target (Rp) <span class="text-rose-500">*</span>
-                                            </label>
-                                            <div class="relative">
-                                                <span class="absolute inset-y-0 left-3 flex items-center text-sm text-gray-500 pointer-events-none">Rp</span>
-                                                <input type="number" id="edit-goal-amount" name="target_amount"
-                                                       value="{{ (int) $savingGoal->target_amount }}"
-                                                       min="1" step="1"
-                                                       class="w-full pl-9 rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                            </div>
-                                        </div>
-
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label for="edit-goal-start" class="block text-xs font-medium text-gray-700 mb-1.5">
-                                                    Tanggal Mulai <span class="text-rose-500">*</span>
-                                                </label>
-                                                <input type="date" id="edit-goal-start" name="start_date"
-                                                       value="{{ $savingGoal->start_date->format('Y-m-d') }}"
-                                                       class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                            </div>
-                                            <div>
-                                                <label for="edit-goal-end" class="block text-xs font-medium text-gray-700 mb-1.5">
-                                                    Tanggal Akhir <span class="text-rose-500">*</span>
-                                                </label>
-                                                <input type="date" id="edit-goal-end" name="end_date"
-                                                       value="{{ $savingGoal->end_date->format('Y-m-d') }}"
-                                                       class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-amber-500 focus:ring-amber-500"/>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {{-- Modal footer --}}
-                                    <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                                        <button type="button"
-                                                onclick="document.getElementById('modal-edit-goal').classList.add('hidden')"
-                                                class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition duration-150">
-                                            Batal
-                                        </button>
-                                        <button type="submit" id="btn-save-edit-goal"
-                                                class="inline-flex items-center px-5 py-2 bg-amber-500 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 transition duration-150">
-                                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                            Simpan Perubahan
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-            {{-- ============================================ --}}
-            {{-- END TARGET TABUNGAN --}}
-            {{-- ============================================ --}}
-
-            {{-- Diagram Statistik 30 Hari --}}
-            <div class="bg-white border border-gray-200 overflow-hidden sm:rounded-lg mb-6">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-900">Statistik Keuangan</h3>
-                            <p class="text-xs text-gray-500 mt-0.5">Pemasukan, pengeluaran, dan saldo harian — 30 hari terakhir</p>
-                        </div>
-                        <div class="flex items-center gap-4 text-xs">
-                            <span class="flex items-center gap-1.5">
-                                <span class="w-3 h-0.5 rounded bg-emerald-500 inline-block"></span>
-                                Pemasukan
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="w-3 h-0.5 rounded bg-rose-500 inline-block"></span>
-                                Pengeluaran
-                            </span>
-                            <span class="flex items-center gap-1.5">
-                                <span class="w-3 h-0.5 rounded bg-blue-500 inline-block"></span>
-                                Saldo
-                            </span>
-                        </div>
-                    </div>
-                    <div class="relative" style="height: 320px;">
-                        <canvas id="chartKeuangan"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Filter --}}
-            <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+            {{-- Filter & Actions --}}
+            <div class="bg-white rounded-2xl shadow-sm p-5 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <form method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-end gap-3">
                     <div>
-                        <label for="filter-type" class="block text-xs font-medium text-gray-600 mb-1">Tipe</label>
+                        <label for="filter-type" class="block text-xs font-medium text-gray-500 mb-1.5">Tipe</label>
                         <select id="filter-type" name="type"
-                                class="rounded-lg border-gray-300 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500">
+                                class="rounded-xl border-gray-200 text-sm focus:border-[#386650] focus:ring-[#386650] bg-[#F4F3F0] text-gray-700">
                             <option value="">Semua Tipe</option>
                             <option value="income" {{ request('type') === 'income' ? 'selected' : '' }}>Pemasukan</option>
                             <option value="expense" {{ request('type') === 'expense' ? 'selected' : '' }}>Pengeluaran</option>
                         </select>
                     </div>
                     <div>
-                        <label for="filter-category" class="block text-xs font-medium text-gray-600 mb-1">Kategori</label>
+                        <label for="filter-category" class="block text-xs font-medium text-gray-500 mb-1.5">Kategori</label>
                         <select id="filter-category" name="category_id"
-                                class="rounded-lg border-gray-300 text-sm shadow-sm focus:border-gray-500 focus:ring-gray-500">
+                                class="rounded-xl border-gray-200 text-sm focus:border-[#386650] focus:ring-[#386650] bg-[#F4F3F0] text-gray-700">
                             <option value="">Semua Kategori</option>
                             @foreach ($categories as $cat)
                                 <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
@@ -463,78 +112,119 @@
                     </div>
                     <div class="flex gap-2">
                         <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition duration-150">
+                                class="inline-flex items-center px-4 py-2 bg-[#386650] border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2d5241] transition duration-150 shadow-sm">
                             Filter
                         </button>
                         @if (request()->hasAny(['type', 'category_id']))
                             <a href="{{ route('dashboard') }}"
-                               class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition duration-150">
+                               class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl font-semibold text-xs text-gray-600 uppercase tracking-widest hover:bg-[#F4F3F0] transition duration-150">
                                 Reset
                             </a>
                         @endif
                     </div>
                 </form>
+
+                <div class="flex items-center gap-3">
+                    {{-- Action: Tambah Transaksi & Kategori --}}
+                    <div class="shrink-0 relative" x-data="{ open: false }">
+                        <button @click="open = !open" @click.away="open = false"
+                           class="inline-flex items-center justify-center w-[38px] h-[38px] bg-[#386650] border border-transparent rounded-xl text-white hover:bg-[#2d5241] focus:outline-none focus:ring-2 focus:ring-[#386650]/40 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
+                        
+                        {{-- Dropdown Menu --}}
+                        <div x-show="open" 
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 scale-95"
+                             x-transition:enter-end="opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="opacity-100 scale-100"
+                             x-transition:leave-end="opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50 origin-top-right"
+                             style="display: none;">
+                             
+                             <a href="{{ route('transactions.create') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#386650] transition font-medium">
+                                 Tambah Transaksi
+                             </a>
+                             <a href="{{ route('categories.create') }}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-[#386650] transition font-medium border-t border-gray-100">
+                                 Tambah Kategori
+                             </a>
+                        </div>
+                    </div>
+                    
+                    {{-- Action: Detail Kategori --}}
+                    <div class="shrink-0">
+                        <a href="{{ route('categories.index') }}"
+                           class="inline-flex items-center justify-center h-[38px] px-4 bg-[#386650] border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2d5241] focus:outline-none focus:ring-2 focus:ring-[#386650]/40 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
+                            Detail Kategori
+                        </a>
+                    </div>
+                </div>
             </div>
 
             {{-- Tabel Transaksi --}}
-            <div class="bg-white border border-gray-200 overflow-hidden sm:rounded-lg">
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
                 @if ($transactions->isEmpty())
                     <div class="text-center py-16">
-                        <svg class="mx-auto w-12 h-12 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
-                        </svg>
-                        <p class="text-gray-500 text-sm font-medium">Belum ada transaksi</p>
+                        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#F4F3F0] flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-600 text-sm font-semibold">Belum ada transaksi</p>
                         <p class="text-gray-400 text-xs mt-1">Mulai tambahkan pemasukan atau pengeluaran Anda</p>
-                        <div class="mt-4 flex justify-center gap-2">
+                        <div class="mt-5 flex justify-center gap-2">
                             <a href="{{ route('transactions.create') }}"
-                               class="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-800 transition">
+                               class="inline-flex items-center px-5 py-2.5 bg-[#386650] border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2d5241] transition shadow-sm">
                                 + Tambah Transaksi
                             </a>
                         </div>
                     </div>
                 @else
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipe</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        <table class="min-w-full">
+                            <thead>
+                                <tr style="background-color: #F4F3F0;">
+                                    <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                    <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Kategori</th>
+                                    <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                                    <th class="px-6 py-3.5 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tipe</th>
+                                    <th class="px-6 py-3.5 text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Jumlah</th>
+                                    <th class="px-6 py-3.5 text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
+                            <tbody class="bg-white divide-y divide-gray-50">
                                 @foreach ($transactions as $transaction)
-                                    <tr class="hover:bg-gray-50 transition duration-100">
+                                    <tr class="hover:bg-[#F4F3F0]/50 transition duration-100">
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {{ $transaction->transaction_date->translatedFormat('d M Y') }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
                                             {{ $transaction->category?->name ?? '-' }}
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                             {{ $transaction->description ?? '-' }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if ($transaction->type === 'income')
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-[#386650]/10 text-[#386650]">
                                                     Pemasukan
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-red-50 text-red-500">
                                                     Pengeluaran
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right {{ $transaction->type === 'income' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-right {{ $transaction->type === 'income' ? 'text-[#386650]' : 'text-red-500' }}">
                                             {{ $transaction->type === 'income' ? '+' : '-' }} {{ format_rupiah($transaction->amount) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="flex items-center justify-center space-x-2">
+                                            <div class="flex items-center justify-center space-x-1">
                                                 <a href="{{ route('transactions.edit', $transaction) }}"
-                                                   class="inline-flex items-center p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition duration-150"
+                                                   class="inline-flex items-center p-1.5 text-gray-400 hover:text-[#386650] hover:bg-[#386650]/10 rounded-lg transition duration-150"
                                                    title="Edit">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -545,7 +235,7 @@
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
-                                                            class="inline-flex items-center p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition duration-150"
+                                                            class="inline-flex items-center p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition duration-150"
                                                             title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -571,190 +261,4 @@
 
         </div>
     </div>
-
-    {{-- Chart.js --}}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // ============================================
-            // Animasi Progress Bar Target Tabungan
-            // ============================================
-            const progressBar = document.getElementById('saving-progress-bar');
-            if (progressBar) {
-                const targetWidth = parseFloat(progressBar.getAttribute('data-target')) || 0;
-                // Sedikit delay agar animasi terlihat
-                setTimeout(function () {
-                    progressBar.style.width = targetWidth + '%';
-                }, 150);
-            }
-
-            // ============================================
-            // Validasi tanggal pada form edit goal (modal)
-            // ============================================
-            const formEditGoal = document.getElementById('form-edit-goal');
-            if (formEditGoal) {
-                formEditGoal.addEventListener('submit', function (e) {
-                    const start = document.getElementById('edit-goal-start').value;
-                    const end   = document.getElementById('edit-goal-end').value;
-                    if (start && end && start > end) {
-                        e.preventDefault();
-                        alert('Tanggal akhir tidak boleh sebelum tanggal mulai.');
-                    }
-                });
-            }
-
-            // ============================================
-            // Validasi tanggal pada form set goal (inline)
-            // ============================================
-            const formSetGoal = document.getElementById('form-set-goal');
-            if (formSetGoal) {
-                formSetGoal.addEventListener('submit', function (e) {
-                    const start = document.getElementById('goal-start').value;
-                    const end   = document.getElementById('goal-end').value;
-                    if (start && end && start > end) {
-                        e.preventDefault();
-                        alert('Tanggal akhir tidak boleh sebelum tanggal mulai.');
-                    }
-                });
-            }
-
-            // ============================================
-            // Chart Keuangan
-            // ============================================
-            const ctx = document.getElementById('chartKeuangan').getContext('2d');
-
-            const labels   = @json($chartLabels);
-            const income   = @json($chartIncome);
-            const expense  = @json($chartExpense);
-            const balance  = @json($chartBalance);
-
-            // Fungsi format Rupiah singkat (1.5jt, 500rb, dll)
-            function formatRupiahShort(value) {
-                if (Math.abs(value) >= 1000000) {
-                    return 'Rp ' + (value / 1000000).toFixed(1) + ' jt';
-                } else if (Math.abs(value) >= 1000) {
-                    return 'Rp ' + (value / 1000).toFixed(0) + ' rb';
-                }
-                return 'Rp ' + value.toLocaleString('id-ID');
-            }
-
-            function formatRupiahFull(value) {
-                return 'Rp ' + Number(value).toLocaleString('id-ID', { minimumFractionDigits: 0 });
-            }
-
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Pemasukan',
-                            data: income,
-                            borderColor: 'rgb(16, 185, 129)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: false,
-                            pointRadius: 3,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: 'rgb(16, 185, 129)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                        },
-                        {
-                            label: 'Pengeluaran',
-                            data: expense,
-                            borderColor: 'rgb(244, 63, 94)',
-                            backgroundColor: 'rgba(244, 63, 94, 0.08)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: false,
-                            pointRadius: 3,
-                            pointHoverRadius: 6,
-                            pointBackgroundColor: 'rgb(244, 63, 94)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                        },
-                        {
-                            label: 'Saldo',
-                            data: balance,
-                            borderColor: 'rgb(59, 130, 246)',
-                            backgroundColor: 'rgba(59, 130, 246, 0.06)',
-                            borderWidth: 2.5,
-                            tension: 0.3,
-                            fill: true,
-                            pointRadius: 2,
-                            pointHoverRadius: 5,
-                            pointBackgroundColor: 'rgb(59, 130, 246)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                        },
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    plugins: {
-                        legend: {
-                            display: false,
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                            titleColor: '#f3f4f6',
-                            bodyColor: '#f3f4f6',
-                            padding: 12,
-                            cornerRadius: 8,
-                            titleFont: { size: 13, weight: '600' },
-                            bodyFont: { size: 12 },
-                            displayColors: true,
-                            boxWidth: 8,
-                            boxHeight: 8,
-                            boxPadding: 4,
-                            callbacks: {
-                                label: function(context) {
-                                    return ' ' + context.dataset.label + ': ' + formatRupiahFull(context.parsed.y);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false,
-                            },
-                            ticks: {
-                                font: { size: 11 },
-                                color: '#9ca3af',
-                                maxTicksLimit: 10,
-                            },
-                            border: {
-                                display: false,
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(229, 231, 235, 0.5)',
-                                drawBorder: false,
-                            },
-                            ticks: {
-                                font: { size: 11 },
-                                color: '#9ca3af',
-                                callback: function(value) {
-                                    return formatRupiahShort(value);
-                                },
-                                maxTicksLimit: 6,
-                            },
-                            border: {
-                                display: false,
-                            }
-                        }
-                    }
-                }
-            });
-        });
-    </script>
 </x-app-layout>
