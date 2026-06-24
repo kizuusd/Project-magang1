@@ -15,7 +15,7 @@ class DashboardController extends Controller
     /**
      * Display the dashboard with transaction summary and listing.
      */
-    public function index(Request $request): View
+    public function oldIndex(Request $request): View
     {
         $query = $request->user()
             ->transactions()
@@ -123,11 +123,41 @@ class DashboardController extends Controller
         ));
     }
 
-    public function indexV2(Request $request): View
+    public function index(Request $request): View
     {
-        // Transaksi terbaru (untuk "Your Transfers")
+        // --- MULTI-WALLET LOGIC ---
+        $activeWalletId = $request->session()->get('active_wallet_id');
+        
+        // Ensure user has at least one wallet
+        if ($request->user()->wallets()->count() === 0) {
+            $wallet = $request->user()->wallets()->create([
+                'name' => 'Dompet Utama',
+                'initial_balance' => 0,
+                'color' => '#386650',
+            ]);
+            $activeWalletId = $wallet->id;
+            $request->session()->put('active_wallet_id', $activeWalletId);
+            
+            // Migrate existing transactions
+            $request->user()->transactions()->whereNull('wallet_id')->update(['wallet_id' => $wallet->id]);
+        } else {
+            if (!$activeWalletId || !$request->user()->wallets()->where('id', $activeWalletId)->exists()) {
+                $activeWalletId = $request->user()->wallets()->first()->id;
+                $request->session()->put('active_wallet_id', $activeWalletId);
+            }
+            
+            // Just in case there are still orphaned transactions, assign to active
+            $request->user()->transactions()->whereNull('wallet_id')->update(['wallet_id' => $activeWalletId]);
+        }
+
+        $activeWallet = $request->user()->wallets()->find($activeWalletId);
+        $allWallets = $request->user()->wallets()->get();
+        // --------------------------
+
+        // Transaksi terbaru (untuk "Your Transfers") filter by active wallet
         $transactions = $request->user()
             ->transactions()
+            ->where('wallet_id', $activeWalletId)
             ->with('category')
             ->orderBy('transaction_date', 'desc')
             ->orderBy('created_at', 'desc')
@@ -167,21 +197,22 @@ class DashboardController extends Controller
                 break;
         }
 
-        // Ringkasan saldo (Filtered by period)
-        $totalIncome  = $request->user()->transactions()->where('type', 'income')
+        // Ringkasan saldo (Filtered by period & wallet)
+        $totalIncome  = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'income')
             ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->sum('amount');
-        $totalExpense = $request->user()->transactions()->where('type', 'expense')
+        $totalExpense = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'expense')
             ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->sum('amount');
 
         // Saldo all-time
-        $allTimeIncome = $request->user()->transactions()->where('type', 'income')->sum('amount');
-        $allTimeExpense = $request->user()->transactions()->where('type', 'expense')->sum('amount');
-        $balance = $allTimeIncome - $allTimeExpense;
+        $allTimeIncome = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'income')->sum('amount');
+        $allTimeExpense = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'expense')->sum('amount');
+        $balance = $activeWallet->initial_balance + $allTimeIncome - $allTimeExpense;
 
         // Data chart
         $transactionsForChart = $request->user()->transactions()
+            ->where('wallet_id', $activeWalletId)
             ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->get();
 
@@ -190,9 +221,9 @@ class DashboardController extends Controller
         $chartExpense = [];
         $chartBalance = [];
 
-        $priorIncome  = $request->user()->transactions()->where('type', 'income')->where('transaction_date', '<', $startDate->format('Y-m-d'))->sum('amount');
-        $priorExpense = $request->user()->transactions()->where('type', 'expense')->where('transaction_date', '<', $startDate->format('Y-m-d'))->sum('amount');
-        $runningBalance = $priorIncome - $priorExpense;
+        $priorIncome  = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'income')->where('transaction_date', '<', $startDate->format('Y-m-d'))->sum('amount');
+        $priorExpense = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'expense')->where('transaction_date', '<', $startDate->format('Y-m-d'))->sum('amount');
+        $runningBalance = $activeWallet->initial_balance + $priorIncome - $priorExpense;
 
         if ($periodFilter === 'hari') {
             $startHour = Carbon::today()->startOfDay();
@@ -257,11 +288,13 @@ class DashboardController extends Controller
 
         $savingGoal = $request->user()->savingGoals()->latest()->first();
 
-        return view(keuangan_view('web.dashboard.dashboard-v2'), compact(
+        return view(keuangan_view('web.dashboard.index'), compact(
             'transactions',
             'categories',
             'totalIncome',
             'totalExpense',
+            'allTimeIncome',
+            'allTimeExpense',
             'balance',
             'chartLabels',
             'chartIncome',
@@ -269,7 +302,9 @@ class DashboardController extends Controller
             'chartBalance',
             'savingGoal',
             'periodFilter',
-            'periodLabel'
+            'periodLabel',
+            'activeWallet',
+            'allWallets'
         ));
     }
 

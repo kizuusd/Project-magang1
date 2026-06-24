@@ -1,16 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between" x-data="{}">
             <h2 class="font-bold text-xl text-gray-900 leading-tight">
                 {{ __('Kategori') }}
             </h2>
-            <a href="{{ route('categories.create') }}"
+            <button @click="$dispatch('open-create-category-modal')"
                class="inline-flex items-center px-4 py-2 bg-[#386650] border border-transparent rounded-xl font-semibold text-xs text-white uppercase tracking-widest hover:bg-[#2d5241] focus:outline-none focus:ring-2 focus:ring-[#386650]/40 focus:ring-offset-2 transition ease-in-out duration-150 shadow-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                 </svg>
                 Tambah Kategori
-            </a>
+            </button>
         </div>
     </x-slot>
 
@@ -20,8 +20,12 @@
         
         /* Buat header menyatu dengan background halaman */
         header.bg-white.shadow {
-            background-color: #F4F3F0 !important;
+            background-color: var(--app-bg) !important;
             box-shadow: none !important;
+        }
+        
+        @media (min-width: 1024px) {
+            header.bg-white.shadow { padding-left: 16rem !important; }
         }
         
         * { font-family: 'Inter', sans-serif; }
@@ -34,8 +38,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <div class="py-8" style="background-color: #F4F3F0; min-height: calc(100vh - 64px);">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <x-sidebar />
+
+    <div class="py-8 lg:ml-64" style="background-color: var(--app-bg); min-height: calc(100vh - 64px);">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{}">
 
             @if (session('success'))
                 <div class="mb-6 rounded-xl bg-emerald-50 border border-emerald-200 p-4 shadow-sm">
@@ -80,12 +86,12 @@
                                            title="Tambah transaksi kategori ini">
                                             + Transaksi
                                         </a>
-                                        <a href="{{ route('categories.edit', $category) }}"
+                                        <button type="button" @click="$dispatch('open-edit-category-modal-{{ $category->id }}')"
                                            class="inline-flex items-center p-1.5 text-gray-400 hover:text-[#386650] hover:bg-white rounded-lg transition duration-150" title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                        </a>
+                                        </button>
                                         <form action="{{ route('categories.destroy', $category) }}" method="POST"
                                               onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?')">
                                             @csrf
@@ -137,12 +143,12 @@
                                            title="Tambah transaksi kategori ini">
                                             + Transaksi
                                         </a>
-                                        <a href="{{ route('categories.edit', $category) }}"
+                                        <button type="button" @click="$dispatch('open-edit-category-modal-{{ $category->id }}')"
                                            class="inline-flex items-center p-1.5 text-gray-400 hover:text-[#386650] hover:bg-white rounded-lg transition duration-150" title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                        </a>
+                                        </button>
                                         <form action="{{ route('categories.destroy', $category) }}" method="POST"
                                               onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?')">
                                             @csrf
@@ -167,5 +173,11 @@
             </div>
         </div>
     </div>
+    {{-- Include Modals --}}
+    @include('keuangan::web.categories.create')
+
+    @foreach ($categories as $category)
+        @include('keuangan::web.categories.edit', ['category' => $category])
+    @endforeach
 
 </x-app-layout>

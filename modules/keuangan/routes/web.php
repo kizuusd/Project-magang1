@@ -17,12 +17,15 @@ use Modules\Keuangan\Http\Controllers\Web\TransactionController;
 
 Route::middleware(['web', 'auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard-v2', [DashboardController::class, 'indexV2'])->name('dashboard.v2');
     Route::post('/dashboard/saving-goal', [DashboardController::class, 'storeSavingGoal'])->name('saving-goal.store');
     Route::delete('/dashboard/saving-goal', [DashboardController::class, 'deleteSavingGoal'])->name('saving-goal.destroy');
 });
 
 Route::middleware(['web', 'auth'])->group(function () {
     Route::resource('categories', CategoryController::class)->except(['show']);
-    Route::resource('transactions', TransactionController::class)->except(['show', 'index']);
+    Route::resource('transactions', TransactionController::class)->except(['show']);
+    
+    // Wallets routes
+    Route::post('/wallets/switch', [\Modules\Keuangan\Http\Controllers\Web\WalletController::class, 'switch'])->name('wallets.switch');
+    Route::resource('wallets', \Modules\Keuangan\Http\Controllers\Web\WalletController::class)->only(['store', 'update', 'destroy']);
 });

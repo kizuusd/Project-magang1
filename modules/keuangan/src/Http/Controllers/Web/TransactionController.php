@@ -12,6 +12,55 @@ use Modules\Keuangan\Models\Transaction;
 
 class TransactionController extends Controller
 {
+    /**
+     * Display a listing of the transactions.
+     */
+    public function index(Request $request): View
+    {
+        $activeWalletId = $request->session()->get('active_wallet_id');
+        
+        $query = $request->user()
+            ->transactions()
+            ->where('wallet_id', $activeWalletId)
+            ->with('category')
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('type') && in_array($request->type, ['income', 'expense'])) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $transactions = $query->paginate(15)->withQueryString();
+
+        $categories = $request->user()
+            ->categories()
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
+
+        $allTimeIncome = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'income')->sum('amount');
+        $allTimeExpense = $request->user()->transactions()->where('wallet_id', $activeWalletId)->where('type', 'expense')->sum('amount');
+        $totalTransactions = $request->user()->transactions()->where('wallet_id', $activeWalletId)->count();
+        $balance = $allTimeIncome - $allTimeExpense;
+        
+        $activeWallet = $request->user()->wallets()->find($activeWalletId);
+        if ($activeWallet) {
+            $balance += $activeWallet->initial_balance;
+        }
+
+        return view(keuangan_view('web.transactions.index'), compact(
+            'transactions', 
+            'categories', 
+            'allTimeIncome', 
+            'allTimeExpense', 
+            'totalTransactions', 
+            'balance'
+        ));
+    }
 
     /**
      * Show the form for creating a new transaction.
@@ -55,13 +104,14 @@ class TransactionController extends Controller
 
         $data = $request->validated();
         $data['user_id'] = $request->user()->id;
+        $data['wallet_id'] = $request->session()->get('active_wallet_id');
 
         Transaction::create($data);
 
         $label = $data['type'] === 'income' ? 'Pemasukan' : 'Pengeluaran';
 
         return redirect()
-            ->route('dashboard')
+            ->route('transactions.index')
             ->with('success', "{$label} berhasil ditambahkan!");
     }
 
@@ -99,7 +149,7 @@ class TransactionController extends Controller
         $transaction->update($request->validated());
 
         return redirect()
-            ->route('dashboard')
+            ->route('transactions.index')
             ->with('success', 'Transaksi berhasil diperbarui!');
     }
 
@@ -113,7 +163,7 @@ class TransactionController extends Controller
         $transaction->delete();
 
         return redirect()
-            ->route('dashboard')
+            ->route('transactions.index')
             ->with('success', 'Transaksi berhasil dihapus!');
     }
 

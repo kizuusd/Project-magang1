@@ -57,5 +57,13 @@ class User extends Authenticatable
     {
         return $this->hasMany(SavingGoal::class);
     }
+
+    /**
+     * Get the wallets for the user.
+     */
+    public function wallets(): HasMany
+    {
+        return $this->hasMany(\Modules\Keuangan\Models\Wallet::class);
+    }
 }
 

@@ -1,3 +1,100 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ──────────────────────────────────────────────────────
+   CSS CUSTOM PROPERTIES  –  Light / Dark palette
+────────────────────────────────────────────────────── */
+:root {
+    --app-bg:           #F4F3F0;
+    --card-bg:          #ffffff;
+    --sidebar-bg:       #ffffff;
+    --sidebar-border:   #f3f4f6;
+    --input-bg:         #F4F3F0;
+    --text-primary:     #111827;
+    --text-secondary:   #6b7280;
+    --text-muted:       #9ca3af;
+    --border-color:     #f3f4f6;
+    --border-color-2:   #e5e7eb;
+    --hover-bg:         #f9fafb;
+    --accent:           #386650;
+    --accent-light:     #DCE8DE;
+    --accent-soft:      rgba(56,102,80,0.10);
+    --scrollbar-thumb:  #C8C5BE;
+}
+
+html.dark {
+    --app-bg:           #0f172a;
+    --card-bg:          #1e293b;
+    --sidebar-bg:       #1e293b;
+    --sidebar-border:   #334155;
+    --input-bg:         #334155;
+    --text-primary:     #f1f5f9;
+    --text-secondary:   #94a3b8;
+    --text-muted:       #64748b;
+    --border-color:     #334155;
+    --border-color-2:   #475569;
+    --hover-bg:         #334155;
+    --accent:           #4d8460;
+    --accent-light:     #254234;
+    --accent-soft:      rgba(77,132,96,0.20);
+    --scrollbar-thumb:  #475569;
+}
+
+/* ──────────────────────────────────────────────────────
+   UTILITY CLASSES using CSS variables
+────────────────────────────────────────────────────── */
+.app-bg   { background-color: var(--app-bg);  }
+.card-bg  { background-color: var(--card-bg); }
+.sidebar-bg { background-color: var(--sidebar-bg); }
+.text-main { color: var(--text-primary); }
+.text-sub  { color: var(--text-secondary); }
+.border-theme { border-color: var(--border-color); }
+.input-bg { background-color: var(--input-bg); }
+
+/* ──────────────────────────────────────────────────────
+   GLOBAL DARK MODE overrides for common Tailwind classes
+────────────────────────────────────────────────────── */
+html.dark .bg-white          { background-color: var(--card-bg)   !important; }
+html.dark .bg-gray-50        { background-color: var(--hover-bg)  !important; }
+html.dark .bg-gray-100       { background-color: var(--input-bg)  !important; }
+html.dark .border-gray-100   { border-color: var(--border-color)  !important; }
+html.dark .border-gray-200   { border-color: var(--border-color-2)!important; }
+html.dark .border-t          { border-color: var(--border-color)  !important; }
+html.dark .text-gray-900     { color: var(--text-primary)   !important; }
+html.dark .text-gray-800     { color: var(--text-primary)   !important; }
+html.dark .text-gray-700     { color: var(--text-secondary) !important; }
+html.dark .text-gray-600     { color: var(--text-secondary) !important; }
+html.dark .text-gray-500     { color: var(--text-muted)     !important; }
+html.dark .text-gray-400     { color: var(--text-muted)     !important; }
+
+/* table rows / hover */
+html.dark .hover\:bg-gray-50:hover { background-color: var(--hover-bg) !important; }
+
+/* inputs */
+html.dark input, 
+html.dark select, 
+html.dark textarea {
+    background-color: var(--input-bg)  !important;
+    border-color:     var(--border-color-2) !important;
+    color:            var(--text-primary)   !important;
+}
+
+/* scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 99px; }
+
+/* smooth color transition on toggle */
+*, *::before, *::after {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease;
+}
+
+/* ──────────────────────────────────────────────────────
+   DARK modal / backdrop overrides
+────────────────────────────────────────────────────── */
+html.dark .bg-black\/50 { background-color: rgba(0,0,0,0.7) !important; }
