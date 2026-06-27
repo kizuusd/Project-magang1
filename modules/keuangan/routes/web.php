@@ -26,6 +26,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::resource('transactions', TransactionController::class)->except(['show']);
     
     // Wallets routes
+    Route::get('/wallets/resume', [\Modules\Keuangan\Http\Controllers\Web\WalletController::class, 'downloadResume'])->name('wallets.resume');
     Route::post('/wallets/switch', [\Modules\Keuangan\Http\Controllers\Web\WalletController::class, 'switch'])->name('wallets.switch');
     Route::resource('wallets', \Modules\Keuangan\Http\Controllers\Web\WalletController::class)->only(['store', 'update', 'destroy']);
 });

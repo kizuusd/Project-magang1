@@ -91,4 +91,38 @@ class WalletController extends Controller
 
         return redirect()->back()->with('success', 'Dompet berhasil dihapus.');
     }
+
+    /**
+     * Download PDF Resume of the active wallet.
+     */
+    public function downloadResume(Request $request)
+    {
+        $walletId = $request->session()->get('active_wallet_id');
+        if (!$walletId) {
+            return redirect()->back()->withErrors(['error' => 'Tidak ada dompet aktif.']);
+        }
+
+        $wallet = $request->user()->wallets()->findOrFail($walletId);
+        
+        $transactions = $request->user()->transactions()
+            ->where('wallet_id', $wallet->id)
+            ->with('category')
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $allTimeIncome = $transactions->where('type', 'income')->sum('amount');
+        $allTimeExpense = $transactions->where('type', 'expense')->sum('amount');
+        $balance = $wallet->initial_balance + $allTimeIncome - $allTimeExpense;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(keuangan_view('web.wallets.resume-pdf'), compact(
+            'wallet',
+            'transactions',
+            'allTimeIncome',
+            'allTimeExpense',
+            'balance'
+        ));
+
+        return $pdf->download('resume_dompet_' . \Str::slug($wallet->name) . '.pdf');
+    }
 }
